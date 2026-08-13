@@ -10,7 +10,8 @@ class UBoxComponent;
 class UStaticMeshComponent;
 class USpringArmComponent;
 class UCameraComponent;
-class UFloatingPawnMovement;
+class UPawnMovementComponent;
+class UAirplaneMovementComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
@@ -20,45 +21,43 @@ class HW_AIRPLANE_API AAirplane : public APawn
 {
 	GENERATED_BODY()
 
-public:
-	// Sets default values for this pawn's properties
-	AAirplane();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
 public:	
+	AAirplane();
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual UPawnMovementComponent* GetMovementComponent() const override;
 
 protected :
+	virtual void BeginPlay() override;
 	virtual void Look(const FInputActionValue& Value);
 	virtual void Roll(const FInputActionValue& Value);
+	virtual void StopLook(const FInputActionValue& Value);
+	virtual void StopRoll(const FInputActionValue& Value);
 	virtual void Throttle(const FInputActionValue& Value);
 
 private :
 	void BindInput();
+	void ApplyFlightControls(float DeltaTime);
 
 
 public :
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UBoxComponent* Box;
+	TObjectPtr<UBoxComponent> Box;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* Body;
+	TObjectPtr<UStaticMeshComponent> Body;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USpringArmComponent* SpringArm;
+	TObjectPtr<USpringArmComponent> SpringArm;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UCameraComponent* Camera;
+	TObjectPtr<UCameraComponent> Camera;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UFloatingPawnMovement* Movement;
+	TObjectPtr<UAirplaneMovementComponent> Movement;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputMappingContext* DefaultMappingContext;
@@ -71,4 +70,23 @@ public :
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* ThrottleAction;
+
+private :
+	FVector2D TargetLookInput = FVector2D::ZeroVector;
+	FVector2D CurrentLookInput = FVector2D::ZeroVector;
+	float TargetRollInput = 0.0f;
+	float CurrentRollInput = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Airplane|Control", meta = (ClampMin = "0.0", UIMin = "0.0"))
+	float FlightControlInterpSpeed = 6.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Airplane|Control", meta = (ClampMin = "0.0", UIMin = "0.0"))
+	float YawRate = 60.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Airplane|Control", meta = (ClampMin = "0.0", UIMin = "0.0"))
+	float PitchRate = 45.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Airplane|Control", meta = (ClampMin = "0.0", UIMin = "0.0"))
+	float RollRate = 75.0f;
+
 };
