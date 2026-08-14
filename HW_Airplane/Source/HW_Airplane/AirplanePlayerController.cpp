@@ -38,6 +38,8 @@ void AAirplanePlayerController::SetupInputComponent()
 	EnhancedInput->BindAction(RollAction, ETriggerEvent::Triggered, this, &AAirplanePlayerController::HandleRoll);
 	EnhancedInput->BindAction(YawAction, ETriggerEvent::Triggered, this, &AAirplanePlayerController::HandleYaw);
 	EnhancedInput->BindAction(ThrottleAction, ETriggerEvent::Triggered, this, &AAirplanePlayerController::HandleThrottle);
+	EnhancedInput->BindAction(ThrottleAction, ETriggerEvent::Completed, this, &AAirplanePlayerController::HandleThrottleReleased);
+	EnhancedInput->BindAction(ThrottleAction, ETriggerEvent::Canceled, this, &AAirplanePlayerController::HandleThrottleReleased);
 	EnhancedInput->BindAction(LandingAction, ETriggerEvent::Started, this, &AAirplanePlayerController::HandleLanding);
 }
 
@@ -81,6 +83,14 @@ void AAirplanePlayerController::HandleThrottle(const FInputActionValue& Value)
 	if (CachedAirplane)
 	{
 		CachedAirplane->SetThrottleInput(Value.Get<float>());
+	}
+}
+
+void AAirplanePlayerController::HandleThrottleReleased()
+{
+	if (CachedAirplane)
+	{
+		CachedAirplane->SetThrottleInput(0.f);
 	}
 }
 

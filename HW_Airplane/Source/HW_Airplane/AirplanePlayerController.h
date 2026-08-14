@@ -32,6 +32,7 @@ private :
 	void HandleRoll(const FInputActionValue& Value);
 	void HandleYaw(const FInputActionValue& Value);
 	void HandleThrottle(const FInputActionValue& Value);
+	void HandleThrottleReleased();
 	void HandleLanding();
 
 private :

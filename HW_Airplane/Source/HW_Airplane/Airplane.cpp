@@ -40,27 +40,57 @@ void AAirplane::Tick(float DeltaTime)
 
 void AAirplane::SetPitchInput(float Value)
 {
-	Movement->SetPitchInput(Value);
+	if (UAirplaneMovementComponent* AirplaneMovement = GetAirplaneMovement())
+	{
+		AirplaneMovement->SetPitchInput(Value);
+	}
 }
 
 void AAirplane::SetRollInput(float Value)
 {
-	Movement->SetRollInput(Value);
+	if (UAirplaneMovementComponent* AirplaneMovement = GetAirplaneMovement())
+	{
+		AirplaneMovement->SetRollInput(Value);
+	}
 }
 
 void AAirplane::SetYawInput(float Value)
 {
-	Movement->SetYawInput(Value);
+	if (UAirplaneMovementComponent* AirplaneMovement = GetAirplaneMovement())
+	{
+		AirplaneMovement->SetYawInput(Value);
+	}
 }
 
 void AAirplane::SetThrottleInput(float Value)
 {
-	Movement->SetThrottleInput(Value);
+	if (UAirplaneMovementComponent* AirplaneMovement = GetAirplaneMovement())
+	{
+		AirplaneMovement->SetThrottleInput(Value);
+	}
 }
 
 void AAirplane::ToggleLandingMode()
 {
-	Movement->ToggleLandingMode();
+	if (UAirplaneMovementComponent* AirplaneMovement = GetAirplaneMovement())
+	{
+		AirplaneMovement->ToggleLandingMode();
+	}
+}
+
+UAirplaneMovementComponent* AAirplane::GetAirplaneMovement()
+{
+	if (!Movement || Movement->GetOwner() != this)
+	{
+		Movement = FindComponentByClass<UAirplaneMovementComponent>();
+	}
+
+	if (Movement && Box)
+	{
+		Movement->SetUpdatedComponent(Box);
+	}
+
+	return Movement;
 }
 
 // Called when the game starts or when spawned
@@ -68,4 +98,5 @@ void AAirplane::BeginPlay()
 {
 	Super::BeginPlay();
 
+	GetAirplaneMovement();
 }

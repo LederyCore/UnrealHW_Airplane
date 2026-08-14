@@ -29,6 +29,9 @@ public:
 
 protected :
 	virtual void BeginPlay() override;
+
+private :
+	UAirplaneMovementComponent* GetAirplaneMovement();
 	
 
 public :

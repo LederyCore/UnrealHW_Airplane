@@ -17,27 +17,42 @@ public :
 	void SetYawInput(float Value);
 	void SetThrottleInput(float Value);
 	void ToggleLandingMode();
+	bool IsNearGround() const { return bIsNearGround; }
 	bool IsGrounded() const { return bIsGrounded; }
 
 private :
 	void CheckGround();
+	void MoveOnGround(float DeltaTime);
 
 private :
 	UPROPERTY(EditAnywhere, Category = "Ground Check")
-	float GroundCheckDistance = 200.f;
+	float GroundCheckDistance = 1000.f;
 
 	UPROPERTY(EditAnywhere, Category = "Ground Check")
 	float GroundedDistance = 80.f;
 
 	UPROPERTY(EditAnywhere, Category = "Ground Check")
-	TEnumAsByte<ECollisionChannel> GroundTraceChannel = ECC_Visibility;
+	TEnumAsByte<ECollisionChannel> GroundTraceChannel = ECC_WorldStatic;
 
 	UPROPERTY(EditAnywhere, Category = "Ground Check")
-	FVector GroundCheckBoxExtent = FVector(10.f, 10.f, 5.f);
+	FVector GroundCheckBoxExtent = FVector(100.f, 100.f, 10.f);
 
 	UPROPERTY(EditAnywhere, Category = "Ground Check")
 	bool bDrawGroundCheck = true;
 
+	UPROPERTY(EditAnywhere, Category = "Ground Movement")
+	float GroundMaxSpeed = 1200.f;
+
+	UPROPERTY(EditAnywhere, Category = "Ground Movement")
+	float GroundAcceleration = 800.f;
+
+	UPROPERTY(EditAnywhere, Category = "Ground Movement")
+	float GroundFriction = 600.f;
+
+	float ThrottleInput = 0.f;
+	float CurrentGroundSpeed = 0.f;
+	bool bHadGroundHit = false;
+	bool bIsNearGround = false;
 	bool bIsGrounded = false;
 	FHitResult GroundHit;
 };
