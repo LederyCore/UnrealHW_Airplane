@@ -4,12 +4,14 @@
 #include "GameFramework/PawnMovementComponent.h"
 #include "AirplaneMovementComponent.generated.h"
 
-UCLASS(BlueprintType, Blueprintable, ClassGroup=(Movement), meta=(BlueprintSpawnableComponent, DisplayName="Airplane Movement"))
+class IIAirplaneMovement;
+
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Movement), meta = (BlueprintSpawnableComponent, DisplayName = "Airplane Movement"))
 class HW_AIRPLANE_API UAirplaneMovementComponent : public UPawnMovementComponent
 {
 	GENERATED_BODY()
 
-public :
+public:
 	UAirplaneMovementComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void SetPitchInput(float Value);
@@ -17,42 +19,33 @@ public :
 	void SetYawInput(float Value);
 	void SetThrottleInput(float Value);
 	void ToggleLandingMode();
-	bool IsNearGround() const { return bIsNearGround; }
-	bool IsGrounded() const { return bIsGrounded; }
+	void ChangeState(UObject* NewState);
 
-private :
-	void CheckGround();
-	void MoveOnGround(float DeltaTime);
+protected:
+	virtual void BeginPlay() override;
 
-private :
-	UPROPERTY(EditAnywhere, Category = "Ground Check")
-	float GroundCheckDistance = 1000.f;
+private:
+	template<typename T>
+	T* GetOrCreateState()
+	{
+		if (TObjectPtr<UObject>* Found = StateCache.Find(T::StaticClass()))
+		{
+			return Cast<T>(*Found);
+		}
+		T* NewState = NewObject<T>(this);
+		StateCache.Add(T::StaticClass(), NewState);
+		return NewState;
+	}
 
-	UPROPERTY(EditAnywhere, Category = "Ground Check")
-	float GroundedDistance = 80.f;
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Airplane Movement", meta = (DisplayName = "Current State"))
+	TObjectPtr<UObject> CurrentStateObject;
 
-	UPROPERTY(EditAnywhere, Category = "Ground Check")
-	TEnumAsByte<ECollisionChannel> GroundTraceChannel = ECC_WorldStatic;
+private:
 
-	UPROPERTY(EditAnywhere, Category = "Ground Check")
-	FVector GroundCheckBoxExtent = FVector(100.f, 100.f, 10.f);
+	UPROPERTY()
+	TMap<TSubclassOf<UObject>, TObjectPtr<UObject>> StateCache;
 
-	UPROPERTY(EditAnywhere, Category = "Ground Check")
-	bool bDrawGroundCheck = true;
-
-	UPROPERTY(EditAnywhere, Category = "Ground Movement")
-	float GroundMaxSpeed = 1200.f;
-
-	UPROPERTY(EditAnywhere, Category = "Ground Movement")
-	float GroundAcceleration = 800.f;
-
-	UPROPERTY(EditAnywhere, Category = "Ground Movement")
-	float GroundFriction = 600.f;
-
+	IIAirplaneMovement* CurrentMovementInterface = nullptr;
 	float ThrottleInput = 0.f;
-	float CurrentGroundSpeed = 0.f;
-	bool bHadGroundHit = false;
-	bool bIsNearGround = false;
-	bool bIsGrounded = false;
-	FHitResult GroundHit;
 };

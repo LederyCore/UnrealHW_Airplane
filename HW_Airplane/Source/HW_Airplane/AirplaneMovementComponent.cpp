@@ -1,6 +1,8 @@
 
 #include "AirplaneMovementComponent.h"
 #include "DrawDebugHelpers.h"
+#include "IAirplaneMovement.h"
+#include "GroundAirplaneMovement.h"
 
 UAirplaneMovementComponent::UAirplaneMovementComponent()
 {
@@ -11,8 +13,10 @@ void UAirplaneMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	CheckGround();
-	MoveOnGround(DeltaTime);
+	if (CurrentMovementInterface)
+	{
+		CurrentMovementInterface->TickMovement(this, DeltaTime);
+	}
 }
 
 void UAirplaneMovementComponent::SetPitchInput(float Value)
@@ -38,106 +42,28 @@ void UAirplaneMovementComponent::SetThrottleInput(float Value)
 
 void UAirplaneMovementComponent::ToggleLandingMode()
 {
-	UE_LOG(LogTemp, Log, TEXT("NearGround: %s, Grounded: %s"),
-		IsNearGround() ? TEXT("true") : TEXT("false"),
-		IsGrounded() ? TEXT("true") : TEXT("false"));
+	UE_LOG(LogTemp, Log, TEXT("Landing Check"));
 }
 
-void UAirplaneMovementComponent::CheckGround()
+void UAirplaneMovementComponent::ChangeState(UObject* NewState)
 {
-	bHadGroundHit = false;
-	bIsNearGround = false;
-	bIsGrounded = false;
-	GroundHit = FHitResult();
-
-	if (!UpdatedComponent || !GetWorld())
+	if (CurrentMovementInterface)
 	{
-		return;
+		CurrentMovementInterface->Exit(this);
 	}
 
-	const FVector Start = UpdatedComponent->GetComponentLocation();
-	const FVector End = Start - FVector::UpVector * GroundCheckDistance;
-	const FVector GroundedBoundary = Start - FVector::UpVector * GroundedDistance;
-	const FQuat Rotation = UpdatedComponent->GetComponentQuat();
+	CurrentStateObject = NewState;
+	CurrentMovementInterface = Cast<IIAirplaneMovement>(NewState);
 
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(GetOwner());
-	Params.bFindInitialOverlaps = true;
-
-	const bool bHit = GetWorld()->SweepSingleByChannel(
-		GroundHit,
-		Start,
-		End,
-		Rotation,
-		GroundTraceChannel,
-		FCollisionShape::MakeBox(GroundCheckBoxExtent),
-		Params
-	);
-	bHadGroundHit = bHit;
-
-	if (!bHit)
+	if (CurrentMovementInterface)
 	{
-		if (bDrawGroundCheck)
-		{
-			DrawDebugBox(GetWorld(), Start, GroundCheckBoxExtent, Rotation, FColor::Red, false, 0.f, 0, 2.f);
-			DrawDebugBox(GetWorld(), End, GroundCheckBoxExtent, Rotation, FColor::Red, false, 0.f, 0, 2.f);
-			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 0.f, 0, 2.f);
-			DrawDebugLine(GetWorld(), Start, GroundedBoundary, FColor::Green, false, 0.f, 0, 4.f);
-			DrawDebugBox(GetWorld(), GroundedBoundary, GroundCheckBoxExtent, Rotation, FColor::Green, false, 0.f, 0, 2.f);
-		}
-		return;
-	}
-
-	const bool bGroundLikeSurface = GroundHit.ImpactNormal.Z > 0.7f;
-	bIsNearGround = bGroundLikeSurface;
-	bIsGrounded = GroundHit.Distance <= GroundedDistance && bGroundLikeSurface;
-
-	if (bDrawGroundCheck)
-	{
-		const FColor DebugColor = bIsGrounded ? FColor::Green : (bIsNearGround ? FColor::Blue : FColor::Yellow);
-		DrawDebugBox(GetWorld(), Start, GroundCheckBoxExtent, Rotation, DebugColor, false, 0.f, 0, 2.f);
-		DrawDebugBox(GetWorld(), End, GroundCheckBoxExtent, Rotation, DebugColor, false, 0.f, 0, 2.f);
-		DrawDebugLine(GetWorld(), Start, End, DebugColor, false, 0.f, 0, 2.f);
-		DrawDebugLine(GetWorld(), Start, GroundedBoundary, FColor::Green, false, 0.f, 0, 4.f);
-		DrawDebugBox(GetWorld(), GroundedBoundary, GroundCheckBoxExtent, Rotation, FColor::Green, false, 0.f, 0, 2.f);
-		DrawDebugPoint(GetWorld(), GroundHit.ImpactPoint, 12.f, DebugColor, false, 0.f);
+		CurrentMovementInterface->Enter(this);
 	}
 }
 
-void UAirplaneMovementComponent::MoveOnGround(float DeltaTime)
+void UAirplaneMovementComponent::BeginPlay()
 {
-	if (!UpdatedComponent)
-	{
-		return;
-	}
+	Super::BeginPlay();
 
-	if (!IsGrounded())
-	{
-		CurrentGroundSpeed = FMath::FInterpTo(CurrentGroundSpeed, 0.f, DeltaTime, 2.f);
-		return;
-	}
-
-	if (!FMath::IsNearlyZero(ThrottleInput))
-	{
-		CurrentGroundSpeed += ThrottleInput * GroundAcceleration * DeltaTime;
-		CurrentGroundSpeed = FMath::Clamp(CurrentGroundSpeed, -GroundMaxSpeed, GroundMaxSpeed);
-	}
-	else
-	{
-		CurrentGroundSpeed = FMath::FInterpConstantTo(CurrentGroundSpeed, 0.f, DeltaTime, GroundFriction);
-	}
-
-	if (FMath::IsNearlyZero(CurrentGroundSpeed))
-	{
-		return;
-	}
-
-	const FVector MoveDelta = UpdatedComponent->GetForwardVector() * CurrentGroundSpeed * DeltaTime;
-	FHitResult Hit;
-	SafeMoveUpdatedComponent(MoveDelta, UpdatedComponent->GetComponentQuat(), true, Hit);
-
-	if (Hit.IsValidBlockingHit())
-	{
-		SlideAlongSurface(MoveDelta, 1.f - Hit.Time, Hit.Normal, Hit);
-	}
+	ChangeState(GetOrCreateState<UGroundAirplaneMovement>());
 }
