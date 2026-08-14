@@ -8,15 +8,13 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "AirplaneMovementComponent.h"
-#include "AirplanePlayerController.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 
 // Sets default values
 AAirplane::AAirplane()
 {
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
 	bUseControllerRotationPitch = true;
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = true;
@@ -37,155 +35,41 @@ AAirplane::AAirplane()
 	Movement->SetUpdatedComponent(Box);
 }
 
-// Called when the game starts or when spawned
-void AAirplane::BeginPlay()
-{
-	Super::BeginPlay();
-	BindInput();
-}
-
 // Called every frame
 void AAirplane::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	ApplyFlightControls(DeltaTime);
 }
 
-// Called to bind functionality to input
-void AAirplane::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AAirplane::SetPitchInput(float Value)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	UEnhancedInputComponent* EnhancedInputComponent =
-		CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
-
-	if (LookAction)
-	{
-		EnhancedInputComponent->BindAction(
-			LookAction,
-			ETriggerEvent::Triggered,
-			this,
-			&AAirplane::Look
-		);
-
-		EnhancedInputComponent->BindAction(
-			LookAction,
-			ETriggerEvent::Completed,
-			this,
-			&AAirplane::StopLook
-		);
-
-		EnhancedInputComponent->BindAction(
-			LookAction,
-			ETriggerEvent::Canceled,
-			this,
-			&AAirplane::StopLook
-		);
-	}
-
-	if (RollAction)
-	{
-		EnhancedInputComponent->BindAction(
-			RollAction,
-			ETriggerEvent::Triggered,
-			this,
-			&AAirplane::Roll
-		);
-
-		EnhancedInputComponent->BindAction(
-			RollAction,
-			ETriggerEvent::Completed,
-			this,
-			&AAirplane::StopRoll
-		);
-
-		EnhancedInputComponent->BindAction(
-			RollAction,
-			ETriggerEvent::Canceled,
-			this,
-			&AAirplane::StopRoll
-		);
-	}
-
-	if (ThrottleAction)
-	{
-		EnhancedInputComponent->BindAction(
-			ThrottleAction,
-			ETriggerEvent::Triggered,
-			this,
-			&AAirplane::Throttle
-		);
-	}
+	Movement->SetPitchInput(Value);
 }
 
-UPawnMovementComponent* AAirplane::GetMovementComponent() const
+void AAirplane::SetRollInput(float Value)
 {
-	return Movement;
+	Movement->SetRollInput(Value);
 }
 
-void AAirplane::BindInput()
+void AAirplane::SetYawInput(float Value)
 {
-	AAirplanePlayerController* PlayerController = Cast<AAirplanePlayerController>(GetController());
-	if (PlayerController)
-	{
-		UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
-			PlayerController->GetLocalPlayer()
-		);
-
-		if (SubSystem && DefaultMappingContext)
-		{
-			SubSystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
+	Movement->SetYawInput(Value);
 }
 
-void AAirplane::Look(const FInputActionValue& Value)
+void AAirplane::SetThrottleInput(float Value)
 {
-	TargetLookInput = Value.Get<FVector2D>();
+	Movement->SetThrottleInput(Value);
 }
 
-void AAirplane::Roll(const FInputActionValue& Value)
+void AAirplane::ToggleLandingMode()
 {
-	TargetRollInput = Value.Get<float>();
+	Movement->ToggleLandingMode();
 }
 
-void AAirplane::StopLook(const FInputActionValue& Value)
+// Called when the game starts or when spawned
+void AAirplane::BeginPlay()
 {
-	TargetLookInput = FVector2D::ZeroVector;
-}
+	Super::BeginPlay();
 
-void AAirplane::StopRoll(const FInputActionValue& Value)
-{
-	TargetRollInput = 0.0f;
-}
-
-void AAirplane::Throttle(const FInputActionValue& Value)
-{
-	const float ThrottleValue = Value.Get<float>();
-
-	if (Movement)
-	{
-		Movement->AddThrottleInput(ThrottleValue);
-	}
-}
-
-void AAirplane::ApplyFlightControls(float DeltaTime)
-{
-	const bool bCanControlFlight = Movement && Movement->IsAirborne();
-	const FVector2D DesiredLookInput = bCanControlFlight ? TargetLookInput : FVector2D::ZeroVector;
-	const float DesiredRollInput = bCanControlFlight ? TargetRollInput : 0.0f;
-
-	CurrentLookInput.X = FMath::FInterpTo(CurrentLookInput.X, DesiredLookInput.X, DeltaTime, FlightControlInterpSpeed);
-	CurrentLookInput.Y = FMath::FInterpTo(CurrentLookInput.Y, DesiredLookInput.Y, DeltaTime, FlightControlInterpSpeed);
-	CurrentRollInput = FMath::FInterpTo(CurrentRollInput, DesiredRollInput, DeltaTime, FlightControlInterpSpeed);
-
-	if (!bCanControlFlight)
-	{
-		return;
-	}
-
-	AddControllerYawInput(CurrentLookInput.X * YawRate * DeltaTime);
-	AddControllerPitchInput(CurrentLookInput.Y * PitchRate * DeltaTime);
-	AddControllerRollInput(CurrentRollInput * RollRate * DeltaTime);
 }
