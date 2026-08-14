@@ -46,7 +46,4 @@ public :
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UAirplaneMovementComponent> Movement;
-
-private :
-	// 랜딩 토글 플래그 필드 (블루프린트 에디터에서 확인은 가능 조작은 불가능.)
 };
