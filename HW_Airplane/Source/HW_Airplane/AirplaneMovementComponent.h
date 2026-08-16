@@ -5,6 +5,9 @@
 #include "AirplaneMovementComponent.generated.h"
 
 class IIAirplaneMovement;
+class UGroundAirplaneMovement;
+class UTakingOffAirplaneMovement;
+class UFlyingAirplaneMovement;
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Movement), meta = (BlueprintSpawnableComponent, DisplayName = "Airplane Movement"))
 class HW_AIRPLANE_API UAirplaneMovementComponent : public UPawnMovementComponent
@@ -20,6 +23,20 @@ public:
 	void SetThrottleInput(float Value);
 	void ToggleLandingMode();
 	void ChangeState(UObject* NewState);
+
+	float GetThrottleInput() const { return ThrottleInput; }
+	float GetPitchInput() const { return PitchInput; }
+	float GetRollInput() const { return RollInput; }
+	float GetYawInput() const { return YawInput; }
+
+	float GetCurrentSpeed() const { return CurrentSpeed; }
+	void SetCurrentSpeed(float NewSpeed) { CurrentSpeed = NewSpeed; }
+
+	template<typename T>
+	void TransitionToState()
+	{
+		ChangeState(GetOrCreateState<T>());
+	}
 
 protected:
 	virtual void BeginPlay() override;
@@ -41,6 +58,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Airplane Movement", meta = (DisplayName = "Current State"))
 	TObjectPtr<UObject> CurrentStateObject;
 
+	UPROPERTY(EditAnywhere, Instanced, Category = "Airplane Movement|States")
+	TObjectPtr<UGroundAirplaneMovement> GroundState;
+
+	UPROPERTY(EditAnywhere, Instanced, Category = "Airplane Movement|States")
+	TObjectPtr<UTakingOffAirplaneMovement> TakingOffState;
+
+	UPROPERTY(EditAnywhere, Instanced, Category = "Airplane Movement|States")
+	TObjectPtr<UFlyingAirplaneMovement> FlyingState;
+
 private:
 
 	UPROPERTY()
@@ -48,4 +74,8 @@ private:
 
 	IIAirplaneMovement* CurrentMovementInterface = nullptr;
 	float ThrottleInput = 0.f;
+	float PitchInput = 0.f;
+	float RollInput = 0.f;
+	float YawInput = 0.f;
+	float CurrentSpeed = 0.f;
 };
