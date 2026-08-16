@@ -3,20 +3,10 @@
 #include "DrawDebugHelpers.h"
 #include "IAirplaneMovement.h"
 #include "GroundAirplaneMovement.h"
-#include "TakingOffAirplaneMovement.h"
-#include "FlyingAirplaneMovement.h"
 
 UAirplaneMovementComponent::UAirplaneMovementComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	GroundState = CreateDefaultSubobject<UGroundAirplaneMovement>(TEXT("GroundState"));
-	StateCache.Add(UGroundAirplaneMovement::StaticClass(), GroundState);
-
-	TakingOffState = CreateDefaultSubobject<UTakingOffAirplaneMovement>(TEXT("TakingOffState"));
-	StateCache.Add(UTakingOffAirplaneMovement::StaticClass(), TakingOffState);
-
-	FlyingState = CreateDefaultSubobject<UFlyingAirplaneMovement>(TEXT("FlyingState"));
-	StateCache.Add(UFlyingAirplaneMovement::StaticClass(), FlyingState);
 }
 
 void UAirplaneMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -31,22 +21,23 @@ void UAirplaneMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 void UAirplaneMovementComponent::SetPitchInput(float Value)
 {
-	PitchInput = FMath::Clamp(Value, -1.f, 1.f);
+	UE_LOG(LogTemp, Log, TEXT("Pitch Value: %f"), Value);
 }
 
 void UAirplaneMovementComponent::SetRollInput(float Value)
 {
-	RollInput = FMath::Clamp(Value, -1.f, 1.f);
+	UE_LOG(LogTemp, Log, TEXT("Roll Value: %f"), Value);
 }
 
 void UAirplaneMovementComponent::SetYawInput(float Value)
 {
-	YawInput = FMath::Clamp(Value, -1.f, 1.f);
+	UE_LOG(LogTemp, Log, TEXT("Yaw Value: %f"), Value);
 }
 
 void UAirplaneMovementComponent::SetThrottleInput(float Value)
 {
 	ThrottleInput = FMath::Clamp(Value, -1.f, 1.f);
+	UE_LOG(LogTemp, Log, TEXT("Throttle Value: %f"), Value);
 }
 
 void UAirplaneMovementComponent::ToggleLandingMode()
@@ -74,5 +65,5 @@ void UAirplaneMovementComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ChangeState(GroundState);
+	ChangeState(GetOrCreateState<UGroundAirplaneMovement>());
 }
