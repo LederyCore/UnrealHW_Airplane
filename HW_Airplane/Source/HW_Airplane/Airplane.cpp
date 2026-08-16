@@ -23,6 +23,14 @@ AAirplane::AAirplane()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(Box);
+	SpringArm->TargetArmLength = 600.f;
+	SpringArm->SocketOffset = FVector(0.f, 0.f, 100.f);
+	SpringArm->bEnableCameraLag = true;
+	SpringArm->CameraLagSpeed = 3.f;
+	SpringArm->bEnableCameraRotationLag = true;
+	SpringArm->CameraRotationLagSpeed = 10.f;
+	SpringArm->bInheritRoll = false;
+	SpringArm->bDoCollisionTest = false;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);

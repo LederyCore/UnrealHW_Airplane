@@ -29,8 +29,11 @@ protected :
 private :
 	void CacheControlledAirplane();
 	void HandlePitch(const FInputActionValue& Value);
+	void HandlePitchReleased();
 	void HandleRoll(const FInputActionValue& Value);
+	void HandleRollReleased();
 	void HandleYaw(const FInputActionValue& Value);
+	void HandleYawReleased();
 	void HandleThrottle(const FInputActionValue& Value);
 	void HandleThrottleReleased();
 	void HandleLanding();
